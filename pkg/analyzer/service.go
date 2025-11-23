@@ -47,12 +47,13 @@ func DetectUnusedServices(clientset *kubernetes.Clientset) ([]WasteItem, error) 
 			details := "No active pods"
 
 			// Check if it's costing money
-			if svc.Spec.Type == "LoadBalancer" {
+			switch svc.Spec.Type {
+			case "LoadBalancer":
 				cost = CostLoadBalancer
 				details = "LoadBalancer (Unused)"
-			} else if svc.Spec.Type == "NodePort" {
+			case "NodePort":
 				details = "NodePort (Unused)"
-			} else {
+			default:
 				details = "ClusterIP (Unused)"
 			}
 
