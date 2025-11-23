@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kube-waste | Stop burning money on Kubernetes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .gradient-text {
+            background: linear-gradient(to right, #34d399, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white antialiased">
+
+    <!-- Navbar -->
+    <nav class="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-money-bill-wave text-emerald-400 text-xl"></i>
+            <span class="font-bold text-xl tracking-tight">kube-waste</span>
+        </div>
+        <a href="https://github.com/YOUR_USERNAME/kube-waste" target="_blank" class="text-slate-400 hover:text-white transition">
+            <i class="fa-brands fa-github text-2xl"></i>
+        </a>
+    </nav>
+
+    <!-- Hero Section -->
+    <main class="max-w-5xl mx-auto px-6 mt-16 text-center">
+        <div class="inline-block px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-sm text-emerald-400 font-medium mb-6">
+            ✨ v1.0.0 Now Available
+        </div>
+        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
+            Stop burning money on <br>
+            <span class="gradient-text">Kubernetes.</span>
+        </h1>
+        <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10">
+            The lightweight CLI to find unused PVCs, abandoned Load Balancers, and zombie workloads. 
+            <span class="text-white font-semibold">No agents. No sidecars. Read-only.</span>
+        </p>
+
+        <!-- The Terminal Preview -->
+        <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 max-w-3xl mx-auto shadow-2xl text-left mb-12 overflow-hidden relative group">
+            <div class="flex space-x-2 mb-4 opacity-50">
+                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <pre class="mono text-sm md:text-base overflow-x-auto text-slate-300">
+<span class="text-emerald-400">$</span> kube-waste scan
+
+<span class="text-blue-400">ℹ️  Using context: production-cluster-us-east-1</span>
+
+TYPE            NAMESPACE      NAME                 EST. SAVINGS
+----            ---------      ----                 ------------
+Unused PVC      default        old-mongo-backup     <span class="text-red-400">$12.50/mo</span>
+Unused Svc      payments       legacy-lb-api        <span class="text-red-400">$15.00/mo</span>
+Zombie Deploy   backend        worker-v1            <span class="text-yellow-400">CleanUp</span>
+----------------------------------------------------------------
+<span class="text-emerald-400 font-bold">💰 TOTAL POTENTIAL SAVINGS: $27.50 / month</span>
+            </pre>
+            <!-- Hover overlay for "Copy Install Command" could go here -->
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20">
+            <div class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 flex items-center space-x-3 cursor-pointer hover:bg-slate-750 transition group">
+                <span class="text-slate-400 select-none">$</span>
+                <code class="mono text-emerald-400">curl -sL https://get.kube-waste.com | bash</code>
+                <i class="fa-regular fa-copy text-slate-500 group-hover:text-white transition"></i>
+            </div>
+            <a href="https://github.com/YOUR_USERNAME/kube-waste/releases" class="px-8 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-bold transition shadow-lg shadow-emerald-500/20">
+                Download Binary
+            </a>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid md:grid-cols-3 gap-8 text-left border-t border-slate-800 pt-16">
+            <div>
+                <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-4 text-emerald-400">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3 class="font-bold text-lg text-white mb-2">100% Safe & Read-Only</h3>
+                <p class="text-slate-400">Uses your local kubeconfig. Never sends data to the cloud. Installs nothing on your cluster.</p>
+            </div>
+            <div>
+                <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-4 text-blue-400">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <h3 class="font-bold text-lg text-white mb-2">Instant Results</h3>
+                <p class="text-slate-400">Written in Go. Scans thousands of resources in milliseconds. No waiting for metrics to gather.</p>
+            </div>
+            <div>
+                <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-4 text-purple-400">
+                    <i class="fa-solid fa-piggy-bank"></i>
+                </div>
+                <h3 class="font-bold text-lg text-white mb-2">Real Dollar Estimates</h3>
+                <p class="text-slate-400">Automatically calculates potential savings based on standard cloud provider pricing.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- The "SaaS" Upsell / Waitlist -->
+    <section class="mt-24 py-20 bg-slate-800 border-t border-slate-700">
+        <div class="max-w-3xl mx-auto px-6 text-center">
+            <h2 class="text-3xl font-bold mb-4">Want automated alerts?</h2>
+            <p class="text-slate-400 mb-8">
+                We are building a pro version that runs as a lightweight agent and sends Slack alerts when you waste money.
+            </p>
+            
+            <!-- Simple Form (Replace Action with your Formspree/Mailchimp link) -->
+            <form action="#" class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <input type="email" placeholder="cto@company.com" class="flex-1 px-4 py-3 rounded-lg bg-slate-900 border border-slate-600 focus:border-emerald-500 focus:outline-none text-white">
+                <button type="submit" class="px-6 py-3 rounded-lg bg-white text-slate-900 font-bold hover:bg-slate-200 transition">
+                    Join Waitlist
+                </button>
+            </form>
+            <p class="text-xs text-slate-500 mt-4">No spam. Unsubscribe anytime.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-8 mt-0 bg-slate-900 text-center text-slate-600 text-sm">
+        <p>&copy; 2025 kube-waste. Open Source & MIT Licensed.</p>
+    </footer>
+
+</body>
+</html>
