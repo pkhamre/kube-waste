@@ -6,16 +6,16 @@ A lightweight CLI tool written in Go that scans your Kubernetes cluster for wast
 
 ## Features
 
-- 🔍 **Detects 4 types of waste:**
+- **Detects 4 types of waste:**
   - Unused PersistentVolumeClaims (PVCs)
   - Services with no backing pods
   - Zombie deployments (scaled to 0 replicas)
   - Orphaned pods (running without owner references)
 
-- 💵 **Real dollar estimates** - Calculates monthly savings based on standard cloud pricing
-- ⚡ **Fast** - Scans thousands of resources in milliseconds
-- 🔒 **100% Safe** - Read-only access using your local kubeconfig
-- 🚀 **Zero installation** - Single binary, no cluster-side components
+- **Real dollar estimates** - Calculates monthly savings based on standard cloud pricing
+- **Fast** - Scans thousands of resources in milliseconds
+- **100% Safe** - Read-only access using your local kubeconfig
+- **Zero installation** - Single binary, no cluster-side components
 
 ## Installation
 
@@ -51,8 +51,8 @@ Simply run the binary - it will automatically detect your kubeconfig:
 ### Example Output
 
 ```
-ℹ️  Using config from current directory: kubeconfig
-🔍 Scanning cluster for waste (Go Version)...
+ℹUsing config from current directory: kubeconfig
+Scanning cluster for waste (Go Version)...
 
 TYPE               NAMESPACE    NAME                 DETAILS                  EST. SAVINGS
 ----               ---------    ----                 -------                  ------------
@@ -61,7 +61,7 @@ Unused Service     payments     legacy-lb-api        LoadBalancer (Unused)    $1
 Zombie Deployment  backend      worker-v1            Replicas: 0              $0.00/mo
 Orphaned Pod       default      debug-pod            0.1 vCPU / 0.1 GB        $2.30/mo
 -------------------------------------------------------------------------
-💰 TOTAL POTENTIAL SAVINGS: $22.30 / month
+TOTAL POTENTIAL SAVINGS: $22.30 / month
 ```
 
 ## Kubeconfig Resolution

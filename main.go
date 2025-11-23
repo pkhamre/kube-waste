@@ -34,10 +34,10 @@ func main() {
 
 	if _, err := os.Stat(localConfig); err == nil {
 		kubeconfig = localConfig
-		fmt.Printf("ℹ️  Using config from current directory: %s\n", kubeconfig)
+		fmt.Printf("Using config from current directory: %s\n", kubeconfig)
 	} else if _, err := os.Stat(localDotConfig); err == nil {
 		kubeconfig = localDotConfig
-		fmt.Printf("ℹ️  Using config from current directory: %s\n", kubeconfig)
+		fmt.Printf("Using config from current directory: %s\n", kubeconfig)
 	} else if home := homedir.HomeDir(); home != "" {
 		// Check home dir, but don't crash if missing, clientcmd handles it
 		kubeconfig = filepath.Join(home, ".kube", "config")
@@ -60,7 +60,7 @@ func main() {
 		panic(err.Error())
 	}
 
-	fmt.Println("🔍 Scanning cluster for waste (Go Version)...")
+	fmt.Println("Scanning cluster for waste (Go Version)...")
 
 	// 4. Run Analyzers
 	var allWaste []analyzer.WasteItem
@@ -68,14 +68,14 @@ func main() {
 	// Check PVCs
 	pvcWaste, err := analyzer.DetectPVCWaste(clientset)
 	if err != nil {
-		fmt.Printf("⚠️  Error scanning PVCs: %v\n", err)
+		fmt.Printf("Error scanning PVCs: %v\n", err)
 	}
 	allWaste = append(allWaste, pvcWaste...)
 
 	// Check Deployments
 	deployWaste, err := analyzer.DetectZombieDeployments(clientset)
 	if err != nil {
-		fmt.Printf("⚠️  Error scanning Deployments: %v\n", err)
+		fmt.Printf("Error scanning Deployments: %v\n", err)
 	} else {
 		allWaste = append(allWaste, deployWaste...)
 	}
@@ -83,7 +83,7 @@ func main() {
 	// Check Services
 	svcWaste, err := analyzer.DetectUnusedServices(clientset)
 	if err != nil {
-		fmt.Printf("⚠️  Error scanning Services: %v\n", err)
+		fmt.Printf("Error scanning Services: %v\n", err)
 	} else {
 		allWaste = append(allWaste, svcWaste...)
 	}
@@ -91,7 +91,7 @@ func main() {
 	// Check Orphaned Pods
 	podWaste, err := analyzer.DetectOrphanedPods(clientset)
 	if err != nil {
-		fmt.Printf("⚠️  Error scanning Pods: %v\n", err)
+		fmt.Printf("Error scanning Pods: %v\n", err)
 	} else {
 		allWaste = append(allWaste, podWaste...)
 	}
@@ -123,5 +123,5 @@ func printTable(items []analyzer.WasteItem) {
 	w.Flush()
 
 	fmt.Println("-------------------------------------------------------------------------")
-	fmt.Printf("💰 TOTAL POTENTIAL SAVINGS: $%.2f / month\n", totalSavings)
+	fmt.Printf("TOTAL POTENTIAL SAVINGS: $%.2f / month\n", totalSavings)
 }
