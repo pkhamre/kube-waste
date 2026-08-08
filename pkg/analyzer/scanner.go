@@ -2,8 +2,6 @@ package analyzer
 
 import (
 	"context"
-
-	"k8s.io/client-go/kubernetes"
 )
 
 // DetectorError records that a detector was skipped and why.
@@ -33,11 +31,11 @@ var detectors = []detector{
 	{kind: WastePod, needs: []Kind{KindPods}, run: DetectOrphanedPods},
 }
 
-// Scan lists the cluster once into a Snapshot, runs every detector whose kinds
-// are available, prices the results, and collects partial results and
+// Scan reads a Snapshot from the ClusterReader, runs every detector whose
+// kinds are available, prices the results, and collects partial results and
 // per-detector errors.
-func Scan(ctx context.Context, clientset *kubernetes.Clientset, p Pricing) ScanResult {
-	s := fetchSnapshot(ctx, clientset)
+func Scan(ctx context.Context, r ClusterReader, p Pricing) ScanResult {
+	s := r.Snapshot(ctx)
 
 	var result ScanResult
 	for _, d := range detectors {
