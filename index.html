@@ -4,155 +4,1250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>kube-waste | Stop burning money on Kubernetes</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta name="description"
+        content="kube-waste scans your Kubernetes cluster read-only and reports idle resources as estimated monthly savings. No agents. No sidecars.">
+    <meta name="theme-color" content="#0D1117">
+    <title>kube-waste — Operations Runbook | Stop burning money on Kubernetes</title>
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230D1117'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='18' font-weight='700' fill='%233FB950' text-anchor='middle'%3E%24%3C/text%3E%3C/svg%3E">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
+        :root {
+            --bg: #0D1117;
+            --panel: #161B22;
+            --line: #30363D;
+            --divider: #21262D;
+            --fg: #E6EDF3;
+            --muted: #8B949E;
+            --green: #3FB950;
+            --green-2: #2EA043;
+            --light-green: #7EE787;
+            --amber: #D29922;
+            --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
 
         body {
-            font-family: 'Inter', sans-serif;
+            margin: 0;
+            font-family: var(--mono);
+            background-color: var(--bg);
+            color: var(--fg);
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            /* faint ledger-paper dot grid */
+            background-image: radial-gradient(var(--line) 1px, transparent 1px);
+            background-size: 22px 22px;
+            background-position: center top;
+            background-attachment: fixed;
         }
 
-        .mono {
-            font-family: 'JetBrains Mono', monospace;
+        a {
+            color: var(--light-green);
+            text-decoration: none;
         }
 
-        .gradient-text {
-            background: linear-gradient(to right, #34d399, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        a:hover {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--green);
+            outline-offset: 3px;
+            border-radius: 2px;
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .wrap {
+            max-width: 1060px;
+            margin: 0 auto;
+            padding: 0 clamp(20px, 4vw, 48px);
+        }
+
+        /* ---------- masthead ---------- */
+        header {
+            border-bottom: 1px solid var(--line);
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(6px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .masthead {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--fg);
+        }
+
+        .brand .dollar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--green-2);
+            border-radius: 6px;
+            color: var(--green);
+            font-size: 18px;
+            font-weight: 700;
+            background: var(--panel);
+            flex: none;
+        }
+
+        .brand .slash {
+            color: var(--muted);
+            font-weight: 400;
+            margin: 0 2px;
+        }
+
+        .masthead .meta {
+            display: flex;
+            align-items: center;
+            gap: clamp(10px, 2vw, 20px);
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+        }
+
+        .masthead .meta .status {
+            color: var(--amber);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 2px 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .masthead .meta .ver {
+            color: var(--light-green);
+        }
+
+        .gh-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .gh-link:hover {
+            color: var(--fg);
+        }
+
+        .gh-link svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* ---------- sheet ---------- */
+        .sheet {
+            border-left: 1px solid var(--divider);
+            border-right: 1px solid var(--divider);
+            min-height: 100vh;
+        }
+
+        .titleblock {
+            padding: clamp(56px, 9vw, 110px) 0 0;
+        }
+
+        .titleblock h1 {
+            margin: 0 0 clamp(18px, 3vw, 28px);
+            font-size: clamp(2.5rem, 7.5vw, 5.25rem);
+            font-weight: 700;
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+        }
+
+        .titleblock h1 .ink {
+            color: var(--green);
+        }
+
+        .titleblock p {
+            margin: 0;
+            max-width: 58ch;
+            font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+            color: var(--muted);
+        }
+
+        .titleblock p strong {
+            color: var(--fg);
+            font-weight: 700;
+        }
+
+        /* ---------- meta strip ---------- */
+        .meta-strip {
+            margin-top: clamp(40px, 6vw, 64px);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--panel);
+            overflow: hidden;
+        }
+
+        .meta-strip dl {
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            font-size: 12px;
+        }
+
+        .meta-strip .row {
+            display: flex;
+            gap: 12px;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--divider);
+        }
+
+        .meta-strip .row:nth-last-child(-n+2) {
+            border-bottom: none;
+        }
+
+        .meta-strip dt {
+            color: var(--muted);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-size: 11px;
+            flex: none;
+            min-width: 76px;
+        }
+
+        .meta-strip dd {
+            margin: 0;
+            color: var(--fg);
+            font-weight: 500;
+        }
+
+        .meta-strip dd.value {
+            color: var(--light-green);
+        }
+
+        /* ---------- section chrome ---------- */
+        section {
+            padding-top: clamp(56px, 8vw, 96px);
+        }
+
+        .sec-head {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            margin-bottom: clamp(28px, 4vw, 44px);
+        }
+
+        .sec-head h2 {
+            margin: 0;
+            font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .sec-head .rule {
+            flex: 1;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .sec-head .tag {
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            text-transform: uppercase;
+            flex: none;
+        }
+
+        /* ---------- procedure ---------- */
+        .proc {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1px;
+            background: var(--divider);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .proc-item {
+            background: var(--panel);
+            padding: clamp(22px, 3vw, 32px);
+            position: relative;
+        }
+
+        .proc-num {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--green);
+            letter-spacing: 0.12em;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .proc-item h3 {
+            margin: 0 0 8px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .proc-item p {
+            margin: 0 0 16px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .proc-item code {
+            display: block;
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            color: var(--light-green);
+            background: var(--bg);
+            border: 1px solid var(--divider);
+            border-radius: 6px;
+            padding: 10px 12px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .proc-item .note {
+            font-size: 0.8rem;
+            color: var(--muted);
+            background: var(--bg);
+            border: 1px solid var(--divider);
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+            padding: 10px 12px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* ---------- terminal figure ---------- */
+        .figure {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--panel);
+            box-shadow: 0 12px 40px -18px rgba(0, 0, 0, 0.8);
+        }
+
+        .term-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--divider);
+            background: var(--panel);
+        }
+
+        .term-bar .dots {
+            display: flex;
+            gap: 7px;
+        }
+
+        .term-bar .dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+        }
+
+        .term-bar .dot.r {
+            background: #F85149;
+        }
+
+        .term-bar .dot.a {
+            background: #E3B341;
+        }
+
+        .term-bar .dot.g {
+            background: #3FB950;
+        }
+
+        .term-bar .title {
+            margin-left: 8px;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        .term-bar .ro {
+            margin-left: auto;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--green);
+            border: 1px solid var(--green-2);
+            border-radius: 999px;
+            padding: 2px 10px;
+        }
+
+        .term-body {
+            padding: clamp(20px, 3vw, 30px) clamp(16px, 3vw, 32px) clamp(24px, 3vw, 34px);
+            background: var(--bg);
+        }
+
+        .term-line {
+            margin: 0;
+            font-size: clamp(0.78rem, 1.2vw, 0.9rem);
+            line-height: 1.9;
+            white-space: nowrap;
+        }
+
+        .term-line .prompt {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .term-line .cmd {
+            color: var(--fg);
+        }
+
+        .term-line.muted {
+            color: var(--muted);
+        }
+
+        .term-line .dim {
+            color: var(--muted);
+        }
+
+        .term-cursor {
+            display: inline-block;
+            width: 9px;
+            height: 17px;
+            background: var(--green);
+            vertical-align: text-bottom;
+            margin-left: 3px;
+            animation: blink 1.1s steps(1) infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            55% {
+                opacity: 1;
+            }
+
+            56%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .term-table-wrap {
+            overflow-x: auto;
+            margin-top: 18px;
+        }
+
+        table.term-table {
+            border-collapse: collapse;
+            font-family: var(--mono);
+            font-size: clamp(0.78rem, 1.2vw, 0.9rem);
+            line-height: 1.9;
+            min-width: 760px;
+        }
+
+        table.term-table th {
+            text-align: left;
+            color: var(--muted);
+            font-weight: 500;
+            letter-spacing: 0.04em;
+        }
+
+        table.term-table th:first-child,
+        table.term-table td:first-child {
+            color: var(--amber);
+        }
+
+        table.term-table tr.sep td {
+            color: var(--muted);
+            opacity: 0.7;
+        }
+
+        table.term-table th,
+        table.term-table td {
+            padding: 2px 26px 2px 0;
+            white-space: nowrap;
+        }
+
+        table.term-table th:last-child,
+        table.term-table td:last-child {
+            padding-right: 0;
+            color: var(--green);
+        }
+
+        table.term-table td {
+            color: var(--fg);
+        }
+
+        .term-total {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--line);
+            font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+            font-weight: 700;
+            color: var(--green);
+            letter-spacing: 0.02em;
+        }
+
+        .figcap {
+            padding: 14px 20px;
+            border-top: 1px solid var(--divider);
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* ---------- classifications table ---------- */
+        .class-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+        }
+
+        .class-table th {
+            text-align: left;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 500;
+            padding: 0 0 14px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .class-table td {
+            padding: 16px 20px 16px 0;
+            border-bottom: 1px solid var(--divider);
+            vertical-align: top;
+        }
+
+        .class-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .class-table .type {
+            color: var(--amber);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .class-table .signal {
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .class-table .cost {
+            color: var(--green);
+            white-space: nowrap;
+            font-weight: 500;
+            text-align: right;
+        }
+
+        .class-table th:last-child {
+            text-align: right;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 6px 22px;
+            background: var(--panel);
+        }
+
+        /* ---------- specification ---------- */
+        .spec {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1px;
+            background: var(--divider);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .spec-item {
+            background: var(--panel);
+            padding: 20px 24px;
+            display: flex;
+            gap: 14px;
+            align-items: baseline;
+        }
+
+        .spec-item .box {
+            color: var(--green);
+            font-weight: 700;
+            flex: none;
+            letter-spacing: 0.05em;
+        }
+
+        .spec-item .what {
+            font-weight: 700;
+            font-size: 0.82rem;
+            letter-spacing: 0.1em;
+            color: var(--fg);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .spec-item .why {
+            font-size: 0.8rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* ---------- sign-off ---------- */
+        .signoff {
+            border: 1px solid var(--green-2);
+            border-radius: 12px;
+            background: #12261B;
+            padding: clamp(28px, 5vw, 48px);
+            margin-bottom: clamp(48px, 8vw, 88px);
+        }
+
+        .signoff h2 {
+            margin: 0 0 8px;
+            font-size: clamp(1.2rem, 2vw, 1.5rem);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--light-green);
+        }
+
+        .signoff .lede {
+            margin: 0 0 28px;
+            color: #A8D8B2;
+            font-size: 0.9rem;
+        }
+
+        .signoff .cta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--mono);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 14px 24px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            text-decoration: none;
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+            flex: none;
+        }
+
+        .btn-primary {
+            background: var(--green);
+            color: #0D1117;
+        }
+
+        .btn-primary:hover {
+            background: var(--light-green);
+        }
+
+        .btn-primary svg {
+            fill: #0D1117;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--fg);
+            border-color: var(--line);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--muted);
+            background: rgba(48, 54, 61, 0.25);
+        }
+
+        .btn-ghost svg {
+            fill: var(--fg);
+        }
+
+        .copy-row {
+            margin-top: 26px;
+            display: flex;
+            align-items: stretch;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg);
+            max-width: 100%;
+        }
+
+        .copy-row code {
+            flex: 1;
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            color: var(--light-green);
+            padding: 13px 16px;
+            overflow-x: auto;
+            white-space: nowrap;
+            align-self: center;
+        }
+
+        .copy-btn {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            background: var(--panel);
+            border: none;
+            border-left: 1px solid var(--line);
+            padding: 0 18px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.15s ease, background-color 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--fg);
+            background: var(--divider);
+        }
+
+        .copy-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+            flex: none;
+        }
+
+        .copy-btn.copied {
+            color: var(--green);
+        }
+
+        .signoff .fineprint {
+            margin: 22px 0 0;
+            font-size: 0.75rem;
+            color: #8AA896;
+            line-height: 1.6;
+        }
+
+        /* ---------- footer ---------- */
+        footer {
+            border-top: 1px solid var(--line);
+            padding: 36px 0 48px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        footer .foot {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ---------- scan reveal ---------- */
+        .go .reveal {
+            opacity: 0;
+            transform: translateY(10px);
+            animation: reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .go .reveal:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .go .reveal:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .go .reveal:nth-child(3) {
+            animation-delay: 0.25s;
+        }
+
+        .go .reveal:nth-child(4) {
+            animation-delay: 0.35s;
+        }
+
+        .go .reveal:nth-child(5) {
+            animation-delay: 0.45s;
+        }
+
+        @keyframes reveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .reveal-total {
+            animation: totalIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+        }
+
+        @keyframes totalIn {
+            from {
+                opacity: 0;
+                letter-spacing: 0.12em;
+            }
+            to {
+                opacity: 1;
+                letter-spacing: 0.02em;
+            }
+        }
+
+        /* ---------- responsive ---------- */
+        @media (max-width: 720px) {
+
+            .masthead .meta .ver {
+                display: none;
+            }
+
+            .proc,
+            .spec,
+            .meta-strip dl {
+                grid-template-columns: 1fr;
+            }
+
+            .meta-strip .row:nth-last-child(-n+2) {
+                border-bottom: 1px solid var(--divider);
+            }
+
+            .meta-strip .row:last-child {
+                border-bottom: none;
+            }
+
+            .signoff .cta-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            .go .reveal,
+            .reveal-total,
+            .term-cursor {
+                animation: none;
+                opacity: 1;
+                transform: none;
+            }
         }
     </style>
 </head>
 
-<body class="bg-slate-900 text-white antialiased">
+<body>
+    <!--
+    THESIS: This surface owns the money question — "what is the cluster paying for that nothing uses?" — and refuses the generic dark-hero-plus-terminal-screenshot dev-tool layout.
+    OWN-WORLD: An all-monospace ops runbook on dark ledger paper: #0D1117 ground with a faint dot grid, #161B22 panels, 1px #30363D rules, the system mono stack in four weights (400/500/700/700). Green #3FB950 is money and commands, amber #D29922 is waste, light-green #7EE787 is links and live values. Square corners, restrained, terminal-native.
+    STORY: The visitor reads the handoff sheet a senior engineer gives on-call: obtain, execute, assess, remediate. The poster figure proves it — a real scan showing $22.30/month of idle spend. They believe the tool is read-only, safe, and returns dollars.
+    FIRST VIEWPORT: masthead strip (dollar mark, doc id, EXPERIMENTAL status, version), a two-line heavy-mono headline with "Kubernetes." in green, memo metadata row, and the start of the numbered procedure. Primary action reappears in the green sign-off.
+    FORM: ops-runbook structure, candidate #5 of seven grounded candidates, seed f00f014b.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md.
+    -->
 
-    <!-- Navbar -->
-    <nav class="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
-        <div class="flex items-center space-x-2">
-            <i class="fa-solid fa-money-bill-wave text-emerald-400 text-xl"></i>
-            <span class="font-bold text-xl tracking-tight">kube-waste</span>
-        </div>
-        <a href="https://github.com/pkhamre/kube-waste" target="_blank"
-            class="text-slate-400 hover:text-white transition">
-            <i class="fa-brands fa-github text-2xl"></i>
-        </a>
-    </nav>
-
-    <!-- Hero Section -->
-    <main class="max-w-5xl mx-auto px-6 mt-16 text-center">
-        <div
-            class="inline-block px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-sm text-emerald-400 font-medium mb-6">
-            ✨ v0.1.0 Now Available
-        </div>
-        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
-            Stop burning money on <br>
-            <span class="gradient-text">Kubernetes.</span>
-        </h1>
-        <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10">
-            The lightweight CLI to find unused PVCs, abandoned Load Balancers, and zombie workloads.
-            <span class="text-white font-semibold">No agents. No sidecars. Read-only.</span>
-        </p>
-
-        <!-- The Terminal Preview -->
-        <div
-            class="bg-slate-950 rounded-xl border border-slate-800 p-4 max-w-3xl mx-auto shadow-2xl text-left mb-12 overflow-hidden relative group">
-            <div class="flex space-x-2 mb-4 opacity-50">
-                <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div class="w-3 h-3 rounded-full bg-green-500"></div>
-            </div>
-            <pre class="mono text-sm md:text-base overflow-x-auto text-slate-300">
-<span class="text-emerald-400">$</span> kube-waste scan
-
-<span class="text-blue-400">Using context: production-cluster-us-east-1</span>
-
-TYPE            NAMESPACE      NAME                 EST. SAVINGS
-----            ---------      ----                 ------------
-Unused PVC      default        old-mongo-backup     <span class="text-red-400">$12.50/mo</span>
-Unused Svc      payments       legacy-lb-api        <span class="text-red-400">$15.00/mo</span>
-Zombie Deploy   backend        worker-v1            <span class="text-yellow-400">CleanUp</span>
-----------------------------------------------------------------
-<span class="text-emerald-400 font-bold">TOTAL POTENTIAL SAVINGS: $27.50 / month</span>
-            </pre>
-        </div>
-
-        <!-- Buttons -->
-        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20">
-            <!-- 
-                PRO TIP: Since you don't have 'get.kube-waste.com' set up yet, 
-                I pointed this curl command to the raw GitHub release binary for Linux as a placeholder,
-                or you can keep it generic to prompt them to visit the releases page.
-            -->
-            <div
-                class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 flex items-center space-x-3 cursor-pointer hover:bg-slate-750 transition group">
-                <span class="text-slate-400 select-none">$</span>
-                <code class="mono text-emerald-400">./kube-waste scan</code>
-                <i class="fa-regular fa-copy text-slate-500 group-hover:text-white transition"></i>
-            </div>
-            <a href="https://github.com/pkhamre/kube-waste/releases"
-                class="px-8 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-bold transition shadow-lg shadow-emerald-500/20">
-                Download Binary
+    <header>
+        <div class="wrap masthead">
+            <a class="brand" href="#top" aria-label="kube-waste home">
+                <span class="dollar" aria-hidden="true">$</span>
+                <span>KUBE-WASTE<span class="slash">/</span>RUNBOOK</span>
             </a>
+            <div class="meta">
+                <span class="status">Experimental</span>
+                <span class="ver">v0.2.0</span>
+                <a class="gh-link" href="https://github.com/pkhamre/kube-waste" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path
+                            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap sheet" id="top">
+
+        <!-- title block -->
+        <div class="titleblock">
+            <h1>Stop burning money on<br><span class="ink">Kubernetes.</span></h1>
+            <p><strong>kube-waste</strong> scans your cluster read-only and prints the idle resources (unused
+                volumes, abandoned load balancers, orphaned pods) as estimated dollars per month. No agents.
+                No sidecars. Just a bill.</p>
         </div>
 
-        <!-- Features Grid -->
-        <div class="grid md:grid-cols-3 gap-8 text-left border-t border-slate-800 pt-16">
-            <div>
-                <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-4 text-emerald-400">
-                    <i class="fa-solid fa-shield-halved"></i>
+        <!-- meta strip -->
+        <div class="meta-strip">
+            <dl>
+                <div class="row">
+                    <dt>Doc</dt>
+                    <dd>KW-01</dd>
                 </div>
-                <h3 class="font-bold text-lg text-white mb-2">100% Safe & Read-Only</h3>
-                <p class="text-slate-400">Uses your local kubeconfig. Never sends data to the cloud. Installs nothing on
-                    your cluster.</p>
-            </div>
-            <div>
-                <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-4 text-blue-400">
-                    <i class="fa-solid fa-bolt"></i>
+                <div class="row">
+                    <dt>Version</dt>
+                    <dd class="value">v0.2.0</dd>
                 </div>
-                <h3 class="font-bold text-lg text-white mb-2">Instant Results</h3>
-                <p class="text-slate-400">Written in Go. Scans thousands of resources in milliseconds. No waiting for
-                    metrics to gather.</p>
-            </div>
-            <div>
-                <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-4 text-purple-400">
-                    <i class="fa-solid fa-piggy-bank"></i>
+                <div class="row">
+                    <dt>Mode</dt>
+                    <dd>Read-only</dd>
                 </div>
-                <h3 class="font-bold text-lg text-white mb-2">Real Dollar Estimates</h3>
-                <p class="text-slate-400">Automatically calculates potential savings based on standard cloud provider
-                    pricing.</p>
-            </div>
+                <div class="row">
+                    <dt>License</dt>
+                    <dd>MIT</dd>
+                </div>
+            </dl>
         </div>
+
+        <!-- procedure -->
+        <section aria-labelledby="proc-head">
+            <div class="sec-head">
+                <h2 id="proc-head">Procedure</h2>
+                <span class="rule" aria-hidden="true"></span>
+                <span class="tag">4 steps</span>
+            </div>
+            <ol class="proc">
+                <li class="proc-item">
+                    <span class="proc-num">01</span>
+                    <h3>Obtain</h3>
+                    <p>Grab the binary for your platform from the releases page.</p>
+                    <code>curl -LO https://github.com/pkhamre/kube-waste/releases/latest/download/kube-waste-linux-amd64</code>
+                </li>
+                <li class="proc-item">
+                    <span class="proc-num">02</span>
+                    <h3>Execute</h3>
+                    <p>Run it against your local kubeconfig. Nothing is installed in the cluster.</p>
+                    <code>./kube-waste</code>
+                </li>
+                <li class="proc-item">
+                    <span class="proc-num">03</span>
+                    <h3>Assess</h3>
+                    <p>Read the waste table and the total at the bottom. One line per idle resource.</p>
+                    <p class="note">A kind that can't be listed skips only its own detectors; the rest still report.</p>
+                </li>
+                <li class="proc-item">
+                    <span class="proc-num">04</span>
+                    <h3>Remediate</h3>
+                    <p>Delete what you confirm is unused. The scan only reports; you decide what goes.</p>
+                    <p class="note">Verify against your own cloud bill before acting on the estimate.</p>
+                </li>
+            </ol>
+        </section>
+
+        <!-- figure 1 -->
+        <section aria-labelledby="fig-head">
+            <div class="sec-head">
+                <h2 id="fig-head">Figure 1 — Example output</h2>
+                <span class="rule" aria-hidden="true"></span>
+                <span class="tag">Live scan</span>
+            </div>
+            <figure class="figure">
+                <div class="term-bar">
+                    <div class="dots" aria-hidden="true">
+                        <span class="dot r"></span>
+                        <span class="dot a"></span>
+                        <span class="dot g"></span>
+                    </div>
+                    <span class="title">kube-waste</span>
+                    <span class="ro">Read-only</span>
+                </div>
+                <div class="term-body" id="term-body">
+                    <p class="term-line reveal"><span class="prompt">$</span> <span class="cmd">./kube-waste</span><span
+                            class="term-cursor" aria-hidden="true"></span></p>
+                    <p class="term-line muted reveal">Using config from current directory: kubeconfig</p>
+                    <p class="term-line muted reveal">Scanning cluster for waste (Go Version)...</p>
+                    <div class="term-table-wrap reveal">
+                        <table class="term-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">TYPE</th>
+                                    <th scope="col">NAMESPACE</th>
+                                    <th scope="col">NAME</th>
+                                    <th scope="col">DETAILS</th>
+                                    <th scope="col">EST. SAVINGS</th>
+                                </tr>
+                                <tr class="sep">
+                                    <td>----</td>
+                                    <td>---------</td>
+                                    <td>----</td>
+                                    <td>-------</td>
+                                    <td>------------</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Unused PVC</td>
+                                    <td>default</td>
+                                    <td>old-mongo-backup</td>
+                                    <td>50Gi (Bound)</td>
+                                    <td>$5.00/mo</td>
+                                </tr>
+                                <tr>
+                                    <td>Unused Service</td>
+                                    <td>payments</td>
+                                    <td>legacy-lb-api</td>
+                                    <td>LoadBalancer (Unused)</td>
+                                    <td>$15.00/mo</td>
+                                </tr>
+                                <tr>
+                                    <td>Zombie Deployment</td>
+                                    <td>backend</td>
+                                    <td>worker-v1</td>
+                                    <td>Replicas: 0 (Scaled Down)</td>
+                                    <td>$0.00/mo</td>
+                                </tr>
+                                <tr>
+                                    <td>Orphaned Pod</td>
+                                    <td>default</td>
+                                    <td>debug-pod</td>
+                                    <td>0.1 vCPU / 0.1 GB</td>
+                                    <td>$2.30/mo</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="term-total reveal-total">TOTAL POTENTIAL SAVINGS: $22.30 / month</p>
+                </div>
+                <figcaption class="figcap">Figure 1 — Example output from a scan. Your numbers will differ.</figcaption>
+            </figure>
+        </section>
+
+        <!-- classifications -->
+        <section aria-labelledby="class-head">
+            <div class="sec-head">
+                <h2 id="class-head">Waste classifications</h2>
+                <span class="rule" aria-hidden="true"></span>
+                <span class="tag">4 detectors</span>
+            </div>
+            <div class="table-scroll">
+                <table class="class-table">
+                    <caption class="visually-hidden">Waste types detected by kube-waste and their estimated monthly cost.</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Type</th>
+                            <th scope="col">Detection signal</th>
+                            <th scope="col">Est. cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="type">Unused PVC</td>
+                            <td class="signal">Bound or Pending volume that no pod mounts.</td>
+                            <td class="cost">$0.10 / GB</td>
+                        </tr>
+                        <tr>
+                            <td class="type">Unused Service</td>
+                            <td class="signal">No endpoint slice with endpoints behind it.</td>
+                            <td class="cost">$15.00 / LB</td>
+                        </tr>
+                        <tr>
+                            <td class="type">Zombie Deployment</td>
+                            <td class="signal">Scaled to zero replicas, so no operational value.</td>
+                            <td class="cost">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td class="type">Orphaned Pod</td>
+                            <td class="signal">Running with no owner reference, holding requests.</td>
+                            <td class="cost">$20.00 / vCPU + $3.00 / GB</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- specification -->
+        <section aria-labelledby="spec-head">
+            <div class="sec-head">
+                <h2 id="spec-head">Specification</h2>
+                <span class="rule" aria-hidden="true"></span>
+                <span class="tag">Promise</span>
+            </div>
+            <div class="spec">
+                <div class="spec-item">
+                    <span class="box" aria-hidden="true">[x]</span>
+                    <div>
+                        <span class="what">READ-ONLY</span>
+                        <span class="why">Never writes to the cluster. Deletion is always manual.</span>
+                    </div>
+                </div>
+                <div class="spec-item">
+                    <span class="box" aria-hidden="true">[x]</span>
+                    <div>
+                        <span class="what">NO AGENTS</span>
+                        <span class="why">Nothing installed. No sidecars, no daemons, no footprint.</span>
+                    </div>
+                </div>
+                <div class="spec-item">
+                    <span class="box" aria-hidden="true">[x]</span>
+                    <div>
+                        <span class="what">LOCAL</span>
+                        <span class="why">Uses your kubeconfig. Data never leaves your machine.</span>
+                    </div>
+                </div>
+                <div class="spec-item">
+                    <span class="box" aria-hidden="true">[x]</span>
+                    <div>
+                        <span class="what">SINGLE BINARY</span>
+                        <span class="why">Static build, four platforms, no dependencies.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- sign-off -->
+        <section aria-labelledby="sign-head">
+            <div class="signoff">
+                <h2 id="sign-head">Sign-off — run it and see the dollars</h2>
+                <p class="lede">One binary, one command, one read-only pass over your cluster.</p>
+                <div class="cta-row">
+                    <a class="btn btn-primary" href="https://github.com/pkhamre/kube-waste/releases"
+                        target="_blank" rel="noopener">
+                        <svg viewBox="0 0 16 16" aria-hidden="true">
+                            <path
+                                d="M8 0a1 1 0 0 1 1 1v7.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-4 4a1 1 0 0 1-1.414 0l-4-4a1 1 0 1 1 1.414-1.414L7 8.586V1a1 1 0 0 1 1-1Z" />
+                            <path d="M1 13a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H2a1 1 0 0 1-1-1Z" />
+                        </svg>
+                        Download v0.2.0
+                    </a>
+                    <a class="btn btn-ghost" href="https://github.com/pkhamre/kube-waste" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 16 16" aria-hidden="true">
+                            <path
+                                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+                        </svg>
+                        View on GitHub
+                    </a>
+                </div>
+                <div class="copy-row">
+                    <code id="copy-src">curl -LO https://github.com/pkhamre/kube-waste/releases/latest/download/kube-waste-linux-amd64</code>
+                    <button type="button" class="copy-btn" id="copy-btn">
+                        <svg viewBox="0 0 16 16" aria-hidden="true">
+                            <path
+                                d="M5 1a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H5Z" />
+                            <path d="M2 5a1 1 0 0 1 1-1v9a1 1 0 0 0 1 1h8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5Z" />
+                        </svg>
+                        <span id="copy-label">Copy</span>
+                    </button>
+                </div>
+                <p class="fineprint">kube-waste is experimental and under active development. Savings are estimates from
+                    default pricing; verify them against your own cloud bill before deleting anything. MIT licensed.</p>
+            </div>
+        </section>
+
     </main>
 
-    <!-- The "SaaS" Upsell / Waitlist -->
-    <section class="mt-24 py-20 bg-slate-800 border-t border-slate-700">
-        <div class="max-w-3xl mx-auto px-6 text-center">
-            <h2 class="text-3xl font-bold mb-4">Want automated alerts?</h2>
-            <p class="text-slate-400 mb-8">
-                We are building a pro version that runs as a lightweight agent and sends Slack alerts when you waste
-                money.
-            </p>
-
-            <!-- Simple Form -->
-            <form action="#" class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                <input type="email" placeholder="cto@company.com"
-                    class="flex-1 px-4 py-3 rounded-lg bg-slate-900 border border-slate-600 focus:border-emerald-500 focus:outline-none text-white">
-                <button type="submit"
-                    class="px-6 py-3 rounded-lg bg-white text-slate-900 font-bold hover:bg-slate-200 transition">
-                    Join Waitlist
-                </button>
-            </form>
-            <p class="text-xs text-slate-500 mt-4">No spam. Unsubscribe anytime.</p>
+    <footer>
+        <div class="wrap foot">
+            <span>© 2026 kube-waste · MIT License</span>
+            <span>Read-only Kubernetes waste detector · <a href="https://github.com/pkhamre/kube-waste">github.com/pkhamre/kube-waste</a></span>
         </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="border-t border-slate-800 py-8 mt-0 bg-slate-900 text-center text-slate-600 text-sm">
-        <p>&copy; 2025 kube-waste. Open Source & MIT Licensed.</p>
     </footer>
 
+    <script>
+        (function () {
+            // One authored moment: the scan reveal. Content is visible by default;
+            // JS only adds the class that runs the staggered animation.
+            var body = document.body;
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                body.classList.add('go');
+            } else {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        body.classList.add('go');
+                    });
+                });
+            }
+
+            // Copy-to-clipboard for the download command.
+            var copyBtn = document.getElementById('copy-btn');
+            var copySrc = document.getElementById('copy-src');
+            var copyLabel = document.getElementById('copy-label');
+            if (copyBtn && copySrc) {
+                copyBtn.addEventListener('click', function () {
+                    var text = copySrc.textContent;
+                    function done() {
+                        copyLabel.textContent = 'Copied';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function () {
+                            copyLabel.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 1800);
+                    }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+                    } else {
+                        fallback(text, done);
+                    }
+                });
+            }
+
+            function fallback(text, done) {
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                } catch (e) { /* noop */ }
+                document.body.removeChild(ta);
+                done();
+            }
+        })();
+    </script>
 </body>
 
 </html>
