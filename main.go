@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -62,42 +63,15 @@ func main() {
 
 	fmt.Println("Scanning cluster for waste (Go Version)...")
 
-	// 4. Run Analyzers
-	var allWaste []analyzer.WasteItem
+	// 4. Run Scan
+	result := analyzer.Scan(context.TODO(), clientset)
 
-	// Check PVCs
-	pvcWaste, err := analyzer.DetectPVCWaste(clientset)
-	if err != nil {
-		fmt.Printf("Error scanning PVCs: %v\n", err)
-	}
-	allWaste = append(allWaste, pvcWaste...)
-
-	// Check Deployments
-	deployWaste, err := analyzer.DetectZombieDeployments(clientset)
-	if err != nil {
-		fmt.Printf("Error scanning Deployments: %v\n", err)
-	} else {
-		allWaste = append(allWaste, deployWaste...)
-	}
-
-	// Check Services
-	svcWaste, err := analyzer.DetectUnusedServices(clientset)
-	if err != nil {
-		fmt.Printf("Error scanning Services: %v\n", err)
-	} else {
-		allWaste = append(allWaste, svcWaste...)
-	}
-
-	// Check Orphaned Pods
-	podWaste, err := analyzer.DetectOrphanedPods(clientset)
-	if err != nil {
-		fmt.Printf("Error scanning Pods: %v\n", err)
-	} else {
-		allWaste = append(allWaste, podWaste...)
+	for _, de := range result.Errors {
+		fmt.Printf("Error scanning %s: %v\n", de.Detector, de.Err)
 	}
 
 	// 5. Print Table
-	printTable(allWaste)
+	printTable(result.Waste)
 }
 
 func printTable(items []analyzer.WasteItem) {

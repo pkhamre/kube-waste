@@ -1,11 +1,9 @@
 package analyzer
 
 import (
-	"context"
 	"fmt"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // Average cloud costs (Modify as needed)
@@ -17,17 +15,13 @@ const (
 const DefaultCPU = 0.1   // 100m
 const DefaultMem = 0.125 // 128Mi
 
-func DetectOrphanedPods(clientset *kubernetes.Clientset) ([]WasteItem, error) {
+// DetectOrphanedPods finds running Pods with no owner reference.
+func DetectOrphanedPods(s Snapshot) []WasteItem {
 	var waste []WasteItem
 
-	pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, pod := range pods.Items {
-		// 1. Check for OwnerReferences (Deployment, DaemonSet, StatefulSet)
-		if len(pod.OwnerReferences) == 0 && pod.Status.Phase == "Running" {
+	for _, pod := range s.Pods {
+		// Check for OwnerReferences (Deployment, DaemonSet, StatefulSet)
+		if len(pod.OwnerReferences) == 0 && pod.Status.Phase == corev1.PodRunning {
 
 			// Calculate Resources
 			cpuReq := 0.0
@@ -70,5 +64,5 @@ func DetectOrphanedPods(clientset *kubernetes.Clientset) ([]WasteItem, error) {
 		}
 	}
 
-	return waste, nil
+	return waste
 }
