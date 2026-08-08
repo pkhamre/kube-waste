@@ -42,11 +42,13 @@ TOTAL POTENTIAL SAVINGS: $22.30 / month
 Grab the latest release for your platform from the [releases page](https://github.com/pkhamre/kube-waste/releases):
 
 ```bash
-# Linux/macOS
-curl -LO https://github.com/pkhamre/kube-waste/releases/latest/download/kube-waste
-chmod +x kube-waste
-sudo mv kube-waste /usr/local/bin/
+# Linux (AMD64)
+curl -LO https://github.com/pkhamre/kube-waste/releases/latest/download/kube-waste-linux-amd64
+chmod +x kube-waste-linux-amd64
+sudo mv kube-waste-linux-amd64 /usr/local/bin/kube-waste
 ```
+
+The latest release also ships `kube-waste-darwin-amd64`, `kube-waste-darwin-arm64`, and `kube-waste-windows-amd64.exe` (substitute the filename in the command above).
 
 ### Build from source
 
