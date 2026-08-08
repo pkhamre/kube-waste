@@ -6,6 +6,9 @@
 
 **kube-waste** is a lightweight, read-only CLI written in Go that scans your Kubernetes cluster for wasted resources and tells you what they cost each month. No agents. No sidecars. One binary.
 
+> [!NOTE]
+> **Experimental.** This tool is under active development and may change or break without notice. Treat all savings estimates as rough guidance — verify against your own cloud bill before acting on them.
+
 ## Example output
 
 <p align="center">
