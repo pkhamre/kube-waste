@@ -1,27 +1,42 @@
 # kube-waste
 
-> Stop burning money on Kubernetes. Find unused PVCs, abandoned Load Balancers, and zombie workloads.
+<p align="center">
+  <img src="./assets/readme/hero.svg" width="100%" alt="kube-waste — a read-only CLI that finds wasted Kubernetes resources and estimates the monthly savings in dollars">
+</p>
 
-A lightweight CLI tool written in Go that scans your Kubernetes cluster for wasteful resources and estimates potential cost savings. **No agents. No sidecars. Read-only.**
+**kube-waste** is a lightweight, read-only CLI written in Go that scans your Kubernetes cluster for wasted resources and tells you what they cost each month. No agents. No sidecars. One binary.
 
-## Features
+## Example output
 
-- **Detects 4 types of waste:**
-  - Unused PersistentVolumeClaims (PVCs)
-  - Services with no backing pods
-  - Zombie deployments (scaled to 0 replicas)
-  - Orphaned pods (running without owner references)
+<p align="center">
+  <img src="./assets/readme/output.svg" width="100%" alt="Terminal output of a kube-waste scan showing four waste types and $22.30/month in total potential savings">
+</p>
 
-- **Real dollar estimates** - Calculates monthly savings based on standard cloud pricing
-- **Fast** - Scans thousands of resources in milliseconds
-- **100% Safe** - Read-only access using your local kubeconfig
-- **Zero installation** - Single binary, no cluster-side components
+<details>
+<summary>Raw terminal output</summary>
 
-## Installation
+```
+$ ./kube-waste
+Using config from current directory: kubeconfig
+Scanning cluster for waste (Go Version)...
 
-### Download Binary
+TYPE               NAMESPACE    NAME                 DETAILS                  EST. SAVINGS
+----               ---------    ----                 -------                  ------------
+Unused PVC         default      old-mongo-backup     50Gi (Bound)             $5.00/mo
+Unused Service     payments     legacy-lb-api        LoadBalancer (Unused)    $15.00/mo
+Zombie Deployment  backend      worker-v1            Replicas: 0 (Scaled Down)  $0.00/mo
+Orphaned Pod       default      debug-pod            0.1 vCPU / 0.1 GB        $2.30/mo
+-------------------------------------------------------------------------
+TOTAL POTENTIAL SAVINGS: $22.30 / month
+```
 
-Download the latest release for your platform from the [releases page](https://github.com/pkhamre/kube-waste/releases).
+</details>
+
+## Quick start
+
+### Download the binary
+
+Grab the latest release for your platform from the [releases page](https://github.com/pkhamre/kube-waste/releases):
 
 ```bash
 # Linux/macOS
@@ -30,7 +45,7 @@ chmod +x kube-waste
 sudo mv kube-waste /usr/local/bin/
 ```
 
-### Build from Source
+### Build from source
 
 Requires Go 1.24 or later:
 
@@ -40,31 +55,39 @@ cd kube-waste
 go build -o kube-waste .
 ```
 
-## Usage
+### Run
 
-Simply run the binary - it will automatically detect your kubeconfig:
+Point it at a cluster and run — your kubeconfig is detected automatically:
 
 ```bash
 ./kube-waste
 ```
 
-### Example Output
+## What it finds
 
-```
-ℹUsing config from current directory: kubeconfig
-Scanning cluster for waste (Go Version)...
+| Waste type | How it's detected | Est. monthly cost |
+| --- | --- | --- |
+| **Unused PVC** | A Bound or Pending PVC no pod mounts | $0.10 per GB |
+| **Unused Service** | A Service with no backing endpoints (skips `kubernetes`) | $15.00 per LoadBalancer |
+| **Zombie Deployment** | A Deployment scaled down to `replicas: 0` | $0.00 (operational waste) |
+| **Orphaned Pod** | A running Pod with no owner reference | $20.00 per vCPU + $3.00 per GB RAM |
 
-TYPE               NAMESPACE    NAME                 DETAILS                  EST. SAVINGS
-----               ---------    ----                 -------                  ------------
-Unused PVC         default      old-mongo-backup     50Gi (Bound)             $5.00/mo
-Unused Service     payments     legacy-lb-api        LoadBalancer (Unused)    $15.00/mo
-Zombie Deployment  backend      worker-v1            Replicas: 0              $0.00/mo
-Orphaned Pod       default      debug-pod            0.1 vCPU / 0.1 GB        $2.30/mo
--------------------------------------------------------------------------
-TOTAL POTENTIAL SAVINGS: $22.30 / month
-```
+These are conservative defaults based on major cloud providers (AWS/GCP/Azure), so real savings may be higher or lower.
 
-## Kubeconfig Resolution
+## How it works
+
+<p align="center">
+  <img src="./assets/readme/workflow.svg" width="100%" alt="Pipeline: read a snapshot of the cluster, run one detector per waste type, then price the findings into a monthly dollar estimate">
+</p>
+
+kube-waste reads a **snapshot** of your cluster with your local kubeconfig: deployments, pods, PVCs, services, and endpoint slices. One detector per waste type runs over that snapshot, then pricing converts each finding into a monthly dollar estimate.
+
+- **100% safe** — read-only list calls; nothing is ever modified.
+- **Resilient** — if a resource type can't be listed, only the detectors that depend on it are skipped; everything else still runs.
+- **Fast** — scans thousands of resources in milliseconds.
+- **Single static binary** — no runtime dependencies, works on Linux, macOS, and Windows.
+
+## Kubeconfig resolution
 
 The tool looks for kubeconfig in this order:
 
@@ -73,50 +96,30 @@ The tool looks for kubeconfig in this order:
 3. `~/.kube/config` (home directory)
 4. `$KUBECONFIG` environment variable
 
-## Detection Logic
-
-### Unused PVCs
-- Lists all PersistentVolumeClaims
-- Checks if any pod mounts them
-- Reports unattached PVCs with storage size
-- **Cost**: $0.10/GB/month
-
-### Unused Services
-- Lists all Services (ClusterIP, NodePort, LoadBalancer)
-- Queries EndpointSlices for backing pods
-- Reports services with zero endpoints
-- **Cost**: $15.00/month for LoadBalancers
-
-### Zombie Deployments
-- Lists all Deployments
-- Identifies those with `replicas: 0`
-- Suggests cleanup of scaled-down workloads
-- **Cost**: $0.00 (operational waste)
-
-### Orphaned Pods
-- Lists all running Pods
-- Identifies those without OwnerReferences
-- Calculates resource usage (CPU/Memory)
-- **Cost**: $20.00/vCPU + $3.00/GB RAM per month
-
 ## Development
 
-### Project Structure
+### Project structure
 
 ```
 .
-├── main.go                  # CLI entry point & kubeconfig handling
+├── main.go                  # CLI entry point, kubeconfig resolution, table output
 ├── pkg/
 │   └── analyzer/
-│       ├── types.go         # WasteItem struct & constants
-│       ├── deployment.go    # Zombie deployment detection
-│       ├── pod.go          # Orphaned pod detection
-│       ├── pvc.go          # Unused PVC detection
-│       └── service.go      # Unused service detection
-└── AGENTS.md               # Development guidelines
+│       ├── cluster.go       # ClusterReader — fetches a snapshot from the cluster
+│       ├── snapshot.go      # Snapshot — raw lists of every watched kind
+│       ├── scanner.go       # Scan — runs every detector, collects results & errors
+│       ├── refs.go          # Refs — reference relations over a snapshot
+│       ├── pricing.go       # Pricing — converts usage into $/month
+│       ├── types.go         # WasteItem, WasteType, Usage
+│       ├── pod.go           # Orphaned pod detection
+│       ├── pvc.go           # Unused PVC detection
+│       ├── service.go       # Unused service detection
+│       └── deployment.go    # Zombie deployment detection
+├── CONTEXT.md               # Domain glossary
+└── AGENTS.md                # Development guidelines
 ```
 
-### Build & Test
+### Build & test
 
 ```bash
 # Build
@@ -137,30 +140,21 @@ go vet ./...
 
 See [AGENTS.md](AGENTS.md) for detailed coding guidelines.
 
-## Cost Calculation Assumptions
-
-Default pricing estimates (configurable in `pkg/analyzer/`):
-
-- **Storage (PVC)**: $0.10/GB/month
-- **LoadBalancer**: $15.00/month
-- **Compute (vCPU)**: $20.00/month
-- **Memory (RAM)**: $3.00/GB/month
-
-These are conservative estimates based on major cloud providers (AWS/GCP/Azure). Actual costs may vary.
-
 ## Limitations
 
-- **Metrics-free**: Does not analyze actual usage patterns, only configuration
-- **Stateless**: No historical tracking between runs
-- **Pricing estimates**: Based on generic cloud pricing, not your specific rates
-- **Permissions**: Requires read access to pods, services, deployments, PVCs, and endpoint slices
+- **Metrics-free**: analyzes configuration, not actual usage patterns
+- **Stateless**: no historical tracking between runs
+- **Pricing estimates**: generic cloud pricing, not your specific rates
+- **Permissions**: needs read access to pods, services, deployments, PVCs, and endpoint slices
 
-## Why Go?
+## Roadmap
 
-- **Single binary distribution** - No runtime dependencies
-- **Fast startup** - Sub-millisecond initialization
-- **Native K8s support** - Official `client-go` library
-- **Cross-platform builds** - Easy to compile for Linux/macOS/Windows
+- [ ] JSON/CSV export formats
+- [ ] Custom cost configuration via flags
+- [ ] Historical tracking & trend analysis
+- [ ] Automated Slack/email alerts
+- [ ] Support for StatefulSets and DaemonSets
+- [ ] Integration with cloud provider APIs for exact pricing
 
 ## Contributing
 
@@ -173,16 +167,7 @@ Contributions welcome! Please:
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details
-
-## Roadmap
-
-- [ ] JSON/CSV export formats
-- [ ] Custom cost configuration via flags
-- [ ] Historical tracking & trend analysis
-- [ ] Automated Slack/email alerts
-- [ ] Support for StatefulSets and DaemonSets
-- [ ] Integration with cloud provider APIs for exact pricing
+MIT License — see [LICENSE](LICENSE) for details
 
 ---
 
