@@ -20,7 +20,7 @@ type ScanResult struct {
 type detector struct {
 	kind  WasteType
 	needs []Kind
-	run   func(Snapshot) []WasteItem
+	run   func(Refs) []WasteItem
 }
 
 // detectors runs in output order.
@@ -36,6 +36,7 @@ var detectors = []detector{
 // per-detector errors.
 func Scan(ctx context.Context, r ClusterReader, p Pricing) ScanResult {
 	s := r.Snapshot(ctx)
+	refs := BuildRefs(s)
 
 	var result ScanResult
 	for _, d := range detectors {
@@ -50,7 +51,7 @@ func Scan(ctx context.Context, r ClusterReader, p Pricing) ScanResult {
 		if skip {
 			continue
 		}
-		result.Waste = append(result.Waste, d.run(s)...)
+		result.Waste = append(result.Waste, d.run(refs)...)
 	}
 
 	for i := range result.Waste {

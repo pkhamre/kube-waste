@@ -1,7 +1,7 @@
 package analyzer
 
 // DetectZombieDeployments finds Deployments scaled down to zero replicas.
-func DetectZombieDeployments(s Snapshot) []WasteItem {
+func DetectZombieDeployments(s Refs) []WasteItem {
 	var waste []WasteItem
 
 	for _, dep := range s.Deployments {

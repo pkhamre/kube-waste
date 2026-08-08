@@ -8,23 +8,11 @@ import (
 )
 
 // DetectPVCWaste finds PersistentVolumeClaims no running Pod mounts.
-func DetectPVCWaste(s Snapshot) []WasteItem {
+func DetectPVCWaste(s Refs) []WasteItem {
 	var waste []WasteItem
 
-	// Build a map of mounted PVCs (key: namespace/name)
-	mountedPVCs := make(map[string]bool)
-	for _, pod := range s.Pods {
-		for _, vol := range pod.Spec.Volumes {
-			if vol.PersistentVolumeClaim != nil {
-				key := fmt.Sprintf("%s/%s", pod.Namespace, vol.PersistentVolumeClaim.ClaimName)
-				mountedPVCs[key] = true
-			}
-		}
-	}
-
 	for _, pvc := range s.PVCs {
-		key := fmt.Sprintf("%s/%s", pvc.Namespace, pvc.Name)
-		if mountedPVCs[key] {
+		if s.PVCInUse(pvc.Namespace, pvc.Name) {
 			continue
 		}
 

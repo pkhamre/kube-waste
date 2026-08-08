@@ -3,7 +3,7 @@
 ## Glossary
 
 - **kube-waste** — a read-only CLI that scans a Kubernetes cluster for wasted resources and reports estimated monthly savings.
-- **Scan** — one pass over the cluster: fetch a snapshot, run every detector, aggregate results. The module `Scan(ctx, clientset) ScanResult`.
+- **Scan** — one pass over the cluster: fetch a snapshot, run every detector, price the results. The module `Scan(ctx, r ClusterReader, p Pricing) ScanResult`.
 - **Snapshot** — the immutable cluster state a scan runs against: one fetch of each resource kind (deployments, pods, PVCs, services, endpoint slices), plus which kinds failed to list. Detectors are pure functions over it.
 - **Kind** — a cluster resource kind the snapshot can hold (deployments, pods, persistentvolumeclaims, services, endpointslices). A kind that failed to list is *unavailable*; detectors that need it are skipped, never run against empty data.
 - **Detector** — a pure function that finds one type of waste inside a snapshot. Registered in a table with the kinds it needs.
@@ -13,6 +13,7 @@
   - *Unused Service* — a Service with no backing pods (no endpoint slice endpoints), skipping the `kubernetes` service.
   - *Orphaned Pod* — a Running pod with no owner reference.
   - *Zombie Deployment* — a Deployment scaled to zero replicas.
+- **Reference** — a relation derived from a snapshot that answers "is this resource referenced by something live?" (a PVC is referenced when a pod mounts it; a Service is referenced when an endpoint slice has endpoints). The `Refs` module builds both relations in one pass; detectors ask it instead of re-scanning the raw lists.
 - **Potential savings** — the sum of estimated monthly costs across waste items; the headline output.
 - **Estimated** — a cost computed from default resource assumptions (no requests set) rather than observed values.
 

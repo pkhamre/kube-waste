@@ -10,7 +10,7 @@ const DefaultCPU = 0.1   // 100m
 const DefaultMem = 0.125 // 128Mi
 
 // DetectOrphanedPods finds running Pods with no owner reference.
-func DetectOrphanedPods(s Snapshot) []WasteItem {
+func DetectOrphanedPods(s Refs) []WasteItem {
 	var waste []WasteItem
 
 	for _, pod := range s.Pods {

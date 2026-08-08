@@ -6,7 +6,7 @@ import (
 
 // DetectUnusedServices finds Services with no backing Pods, filtering by
 // EndpointSlices.
-func DetectUnusedServices(s Snapshot) []WasteItem {
+func DetectUnusedServices(s Refs) []WasteItem {
 	var waste []WasteItem
 
 	for _, svc := range s.Services {
@@ -15,18 +15,7 @@ func DetectUnusedServices(s Snapshot) []WasteItem {
 			continue
 		}
 
-		// Find endpoint slices belonging to this service
-		hasBackends := false
-		for _, slice := range s.EndpointSlices {
-			if slice.Namespace == svc.Namespace &&
-				slice.Labels["kubernetes.io/service-name"] == svc.Name &&
-				len(slice.Endpoints) > 0 {
-				hasBackends = true
-				break
-			}
-		}
-
-		if hasBackends {
+		if s.ServiceInUse(svc.Namespace, svc.Name) {
 			continue
 		}
 
