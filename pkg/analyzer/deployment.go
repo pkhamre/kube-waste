@@ -12,7 +12,6 @@ func DetectZombieDeployments(s Snapshot) []WasteItem {
 				Name:      dep.Name,
 				Namespace: dep.Namespace,
 				Details:   "Replicas: 0 (Scaled Down)",
-				Cost:      0.0, // Operational waste, not direct billable waste (usually)
 			})
 		}
 	}

@@ -33,9 +33,10 @@ var detectors = []detector{
 	{kind: WastePod, needs: []Kind{KindPods}, run: DetectOrphanedPods},
 }
 
-// Scan lists the cluster once into a Snapshot, then runs every detector whose
-// kinds are available, collecting partial results and per-detector errors.
-func Scan(ctx context.Context, clientset *kubernetes.Clientset) ScanResult {
+// Scan lists the cluster once into a Snapshot, runs every detector whose kinds
+// are available, prices the results, and collects partial results and
+// per-detector errors.
+func Scan(ctx context.Context, clientset *kubernetes.Clientset, p Pricing) ScanResult {
 	s := fetchSnapshot(ctx, clientset)
 
 	var result ScanResult
@@ -53,5 +54,10 @@ func Scan(ctx context.Context, clientset *kubernetes.Clientset) ScanResult {
 		}
 		result.Waste = append(result.Waste, d.run(s)...)
 	}
+
+	for i := range result.Waste {
+		result.Waste[i].Cost = p.Price(result.Waste[i].Type, result.Waste[i].Usage)
+	}
+
 	return result
 }

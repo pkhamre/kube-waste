@@ -7,8 +7,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-const CostPerGB = 0.10
-
 // DetectPVCWaste finds PersistentVolumeClaims no running Pod mounts.
 func DetectPVCWaste(s Snapshot) []WasteItem {
 	var waste []WasteItem
@@ -33,7 +31,6 @@ func DetectPVCWaste(s Snapshot) []WasteItem {
 		// client-go handles the "500Mi" vs "1Gi" parsing for us automatically
 		qty := pvc.Spec.Resources.Requests["storage"]
 		gb := convertToGB(qty)
-		cost := gb * CostPerGB
 
 		// Only Bound or Pending PVCs count
 		if pvc.Status.Phase == corev1.ClaimBound || pvc.Status.Phase == corev1.ClaimPending {
@@ -42,7 +39,7 @@ func DetectPVCWaste(s Snapshot) []WasteItem {
 				Name:      pvc.Name,
 				Namespace: pvc.Namespace,
 				Details:   fmt.Sprintf("%s (%s)", qty.String(), pvc.Status.Phase),
-				Cost:      cost,
+				Usage:     Usage{StorageGB: gb},
 			})
 		}
 	}

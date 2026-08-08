@@ -6,12 +6,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// Average cloud costs (Modify as needed)
-const (
-	CostPerVCPU  = 20.00
-	CostPerGBRam = 3.00
-)
-
 const DefaultCPU = 0.1   // 100m
 const DefaultMem = 0.125 // 128Mi
 
@@ -48,7 +42,6 @@ func DetectOrphanedPods(s Snapshot) []WasteItem {
 				isEstimated = true
 			}
 
-			cost := (cpuReq * CostPerVCPU) + (memReq * CostPerGBRam)
 			details := fmt.Sprintf("%.1f vCPU / %.1f GB", cpuReq, memReq)
 			if isEstimated {
 				details += " (Est)"
@@ -59,7 +52,7 @@ func DetectOrphanedPods(s Snapshot) []WasteItem {
 				Name:      pod.Name,
 				Namespace: pod.Namespace,
 				Details:   details,
-				Cost:      cost,
+				Usage:     Usage{CPU: cpuReq, MemGB: memReq, Estimated: isEstimated},
 			})
 		}
 	}

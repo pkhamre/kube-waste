@@ -4,8 +4,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const CostLoadBalancer = 15.00
-
 // DetectUnusedServices finds Services with no backing Pods, filtering by
 // EndpointSlices.
 func DetectUnusedServices(s Snapshot) []WasteItem {
@@ -32,13 +30,9 @@ func DetectUnusedServices(s Snapshot) []WasteItem {
 			continue
 		}
 
-		cost := 0.0
 		details := "No active pods"
-
-		// Check if it's costing money
 		switch svc.Spec.Type {
 		case corev1.ServiceTypeLoadBalancer:
-			cost = CostLoadBalancer
 			details = "LoadBalancer (Unused)"
 		case corev1.ServiceTypeNodePort:
 			details = "NodePort (Unused)"
@@ -51,7 +45,7 @@ func DetectUnusedServices(s Snapshot) []WasteItem {
 			Name:      svc.Name,
 			Namespace: svc.Namespace,
 			Details:   details,
-			Cost:      cost,
+			Usage:     Usage{LoadBalancer: svc.Spec.Type == corev1.ServiceTypeLoadBalancer},
 		})
 	}
 

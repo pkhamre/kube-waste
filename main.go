@@ -64,7 +64,7 @@ func main() {
 	fmt.Println("Scanning cluster for waste (Go Version)...")
 
 	// 4. Run Scan
-	result := analyzer.Scan(context.TODO(), clientset)
+	result := analyzer.Scan(context.TODO(), clientset, analyzer.DefaultPricing())
 
 	for _, de := range result.Errors {
 		fmt.Printf("Error scanning %s: %v\n", de.Detector, de.Err)
